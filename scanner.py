@@ -2,7 +2,7 @@ import requests
 import json
 
 # المفاتيح الأساسية الخاصة بك
-GEMINI_API_KEY = "AQ.Ab8RN6LA82vfh_dxZktGxhEyGFR0qKx6UB54-jmnoM0j32n9zA"
+GEMINI_API_KEY = "AQ.Ab8RN6Kd4JRZKUbft6jJoS1mdy-WOCxc8bJcaGz34qLx5rrL-Q"
 TWELVE_DATA_API_KEY = "44310ab963564321a0f2b3dbc9159f03"
 TELEGRAM_BOT_TOKEN = "8604566116:AAEp0ftrIAQnnFGrdnr55kQ9eivwQJkKar4"
 TELEGRAM_CHAT_ID = "628764671"
