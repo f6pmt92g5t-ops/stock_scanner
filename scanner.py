@@ -2,12 +2,12 @@ import requests
 import json
 
 # المفاتيح الأساسية الخاصة بك
-# ملاحظة: تم ضبط الاتصال بطريقة صحيحة تضمن معالجة البيانات دون مشاكل
+GEMINI_API_KEY = "AQ.Ab8RN6LA82vfh_dxZktGxhEyGFR0qKx6UB54-jmnoM0j32n9zA"
 TWELVE_DATA_API_KEY = "44310ab963564321a0f2b3dbc9159f03"
 TELEGRAM_BOT_TOKEN = "8604566116:AAEp0ftrIAQnnFGrdnr55kQ9eivwQJkKar4"
 TELEGRAM_CHAT_ID = "628764671"
 
-# قائمة الأسهم الصغيرة والمضاربية المقترحة
+# قائمة الأسهم الصغيرة والمضاربية
 watchlist = ["SNDL", "ZOM", "VERU", "MULN", "AGBA"]
 
 def get_stock_data(symbol):
@@ -19,53 +19,62 @@ def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "Markdown"
+        "text": message
     }
     response = requests.post(url, json=payload)
     return response.json()
 
+def analyze_with_gemini(stock_data_collection):
+    # إرسال البيانات إلى جيميني المعتمد والجاهز لتحليل الأسهم
+    prompt = f"""
+    أنت محلل مالي خبير في الأسهم الصغيرة (Penny Stocks). لديك بيانات الأسهم التالية:
+    {json.dumps(stock_data_collection)}
+    
+    التعليمات الصارمة:
+    1. افحص الأسهم وقدم تحليلاً فنياً موجزاً ومرتباً في أسطر منفصلة.
+    2. ممنوع الحشو أو المقدمات. ابدأ بالفرصة والقرار فوراً.
+    3. حدد لكل سهم: الإيجابية/السلبية، سعر الدخول، وقف الخسارة، وهدف الربح.
+    4. إذا لم توجد فرصة صالحة، اكتب بوضوح: "القرار: لا توجد فرصة مناسبة حالياً".
+    """
+    
+    # استخدام الموديل المستقر والمعتمد للـ API
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    res_json = response.json()
+    
+    try:
+        return res_json['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return f"تعذر التحليل عبر الذكاء الاصطناعي حالياً: {res_json}"
+
 if __name__ == "__main__":
-    print("جاري فحص السوق والأسهم...")
+    print("جاري سحب بيانات الأسهم وتحليلها عبر جيميني...")
     
-    report_lines = ["📊 *تقرير فحص الأسهم والفرص المضاربية* 📊\n"]
-    
+    all_stocks_data = {}
     for symbol in watchlist:
         data = get_stock_data(symbol)
-        if "values" in data and len(data["values"]) > 0:
-            latest = data["values"][0]
-            close_price = float(latest["close"])
-            high_price = float(latest["high"])
-            low_price = float(latest["low"])
-            volume = int(latest["volume"])
-            
-            # تقييم مبدئي ذكي وحسابات سريعة للدعم والمقاومة والأهداف المضاربية بناءً على السعر الحالي
-            stop_loss = round(low_price * 0.97, 2)
-            target_1 = round(close_price * 1.05, 2)
-            target_2 = round(close_price * 1.10, 2)
-            
-            report_lines.append(f"🔹 السهم: *{symbol}*")
-            report_lines.append(f"• سعر الإغلاق: `{close_price} USD`")
-            report_lines.append(f"• أعلى سعر: `{high_price}` | أدنى سعر: `{low_price}`")
-            report_lines.append(f"• حجم التداول: `{volume:,}`")
-            report_lines.append(f"• 🛑 وقف الخسارة المقترح: `{stop_loss}`")
-            report_lines.append(f"• 🎯 هدف الربح الأول: `{target_1}`")
-            report_lines.append(f"• 🎯 هدف الربح الثاني: `{target_2}`\n")
-        else:
-            report_lines.append(f"🔹 السهم: *{symbol}* - تعذر جلب البيانات التفصيلية حالياً.\n")
+        if "values" in data:
+            all_stocks_data[symbol] = data
 
-    final_report = "\n".join(report_lines)
-    
-    # إرسال التقرير النهائي إلى جوالك عبر تيليجرام
-    tg_response = send_telegram_message(final_report)
-    
-    if tg_response.get("ok"):
-        print("تم إرسال التقرير والتحليل بنجاح تام إلى جوالك!")
+    if all_stocks_data:
+        # توليد التقرير التحليلي بواسطة جيميني
+        ai_report = analyze_with_gemini(all_stocks_data)
+        
+        final_message = "🤖 *تقرير التحليل الذكي للأسهم* 🤖\n\n" + ai_report
+        
+        # إرسال التقرير لجوالك على تيليجرام
+        tg_response = send_telegram_message(final_message)
+        
+        if tg_response.get("ok"):
+            print("تم إرسال التقرير التحليلي بنجاح إلى جوالك!")
+        else:
+            print("خطأ في تيليجرام:", tg_response)
     else:
-        # محاولة الإرسال كنص عادي بدون تنسيق Markdown في حال وجود رمز خاص
-        payload_plain = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": final_report
-        }
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json=payload_plain)
-        print("تم إرسال التقرير بنجاح.")
+        print("فشل جلب بيانات الأسهم.")
