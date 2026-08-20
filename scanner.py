@@ -1,12 +1,13 @@
 import requests
 import json
 import random
-import os
 
 TWELVE_DATA_API_KEY = "44310ab963564321a0f2b3dbc9159f03"
 TELEGRAM_BOT_TOKEN = "8604566116:AAEp0ftrIAQnnFGrdnr55kQ9eivwQJkKar4"
 TELEGRAM_CHAT_ID = "628764671"
-CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY", "")
+
+# وضعنا مفتاح كلاود هنا مباشرة لضمان عمله 100% بدون أخطاء مصادقة
+CLAUDE_API_KEY = "sk-ant-api03-2BeUl0zbFS1nALZxAF7nYFVVxXs8XJbsbD3JqLJS2evP5yvGuKX6FgAiSHF6XkJeYsw-9zt4yhzBnLorr_AQ-dTDGiwAA"
 
 def get_random_cheap_stocks():
     pool = ["AMC", "SNDL", "ZOM", "VERU", "MULN", "AGBA", "BBIG", "CEI", "PROG", "TRKA", "IDEX", "SHIP", "OCGN"]
@@ -50,7 +51,6 @@ def analyze_with_claude(stock_data_summary):
     2. قراءة مفصلة لأهم المؤشرات (RSI, MACD, Bollinger Bands, المتوسطات).
     3. مستويات فيبوناتشي (خاصة المنطقة الذهبية 61.8%).
     4. القرار المضاربي: سعر الدخول، وقف الخسارة، والأهداف.
-    تجنب استخدام رموز غريبة قد تفسد إرسال النص العادي.
     """
     
     payload = {
@@ -74,16 +74,12 @@ def send_telegram_message(message):
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": message
-        # تم إزالة parse_mode لضمان وصول الرسالة كنص عادي 100% بدون أخطاء
     }
-    response = requests.post(url, json=payload, timeout=10)
-    print("Telegram Response:", response.text)
+    requests.post(url, json=payload, timeout=10)
 
 if __name__ == "__main__":
-    print("بدء الفحص وسحب البيانات...")
     stocks = get_random_cheap_stocks()
     symbol = stocks[0]
-    print(f"تم اختيار السهم: {symbol}")
     
     stock_info = {
         "symbol": symbol,
@@ -107,9 +103,5 @@ if __name__ == "__main__":
         diff = max_h - min_l if max_h != min_l else 1
         stock_info["fibonacci_golden_618"] = round(max_h - (diff * 0.618), 2)
     
-    print("جاري إرسال البيانات إلى Claude...")
     report = analyze_with_claude(stock_info)
-    
-    print("جاري إرسال التقرير إلى تيليجرام...")
     send_telegram_message(report)
-    print("تم الانتهاء بنجاح.")
