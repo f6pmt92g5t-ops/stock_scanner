@@ -22,5 +22,7 @@ jobs:
           pip install requests
 
       - name: Run script
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: |
           python scanner.py
